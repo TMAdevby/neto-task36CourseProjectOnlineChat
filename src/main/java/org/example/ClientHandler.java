@@ -14,6 +14,7 @@ public class ClientHandler implements Runnable {
     private String name;
     private Server server;
 
+    //У каждого клиента свой сокет и потоки ввода-вывода, сервер один на всех
     public ClientHandler(Socket socket, Server server) {
         this.socket = socket;
         this.server = server;
@@ -51,6 +52,7 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
+            // Приветствие
             out.println("Привет! Вы подключились к чату! Как Вас зовут?");
             name = in.readLine();
             if (name == null || name.trim().isEmpty()) {
@@ -58,7 +60,7 @@ public class ClientHandler implements Runnable {
             }
             out.println("Привет, " + name + "! Добро пожаловать в чат. Введите /exit для выхода.");
             server.broadcast(name + " присоединился к чату.", this);
-
+            //
             String message;
             while ((message = in.readLine()) != null) {
                 if (message.equalsIgnoreCase("/exit")) {
