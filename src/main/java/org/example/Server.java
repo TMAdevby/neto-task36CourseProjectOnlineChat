@@ -1,5 +1,12 @@
 package org.example;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.*;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -8,13 +15,18 @@ import java.nio.file.Paths;
 public class Server {
 
     private static final String CONFIG_FILE = "settings.txt";
+    private static final String LOG_FILE = "file.log";
     private static final int DEFAULT_SERVER_PORT = 8089;
     private int serverPort = DEFAULT_SERVER_PORT;
     private static final Logger logger = Logger.getLogger(Server.class.getName());
 
+    // Список подключённых клиентов
+    private final List<ClientHandler> clients = new ArrayList<>();
+
     public static void main(String[] args) {
         Server server = new Server();
         server.readServerPortFromFile(CONFIG_FILE);
+        server.startServer();
     }
 
 
@@ -37,6 +49,96 @@ public class Server {
         }catch (NumberFormatException e) {
             logger.log(Level.SEVERE, "Некорректный формат порта в settings.txt. Используется порт по умолчанию: " + DEFAULT_SERVER_PORT, e);
             this.serverPort = DEFAULT_SERVER_PORT;
+        }
+    }
+
+    public void startServer() {
+        logger.info("Сервер запущен на порту " + serverPort);
+        try (ServerSocket serverSocket = new ServerSocket(serverPort)) {
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                logger.info("Новое подключение!");
+                logger.info("IP клиента: " + clientSocket.getInetAddress().getHostAddress());
+                logger.info("Порт клиента: " + clientSocket.getPort());
+
+                ClientHandler clientHandler = new ClientHandler(clientSocket, this); // ← передаём this
+                clients.add(clientHandler);
+                new Thread(clientHandler).start();
+            }
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Ошибка запуска сервера", e);
+        }
+    }
+
+
+
+
+
+
+
+
+    public void startServer2(){
+        logger.info("Сервер запущен на порту " + serverPort);
+        logger.info("Ожидаем подключение... ");
+
+        try (ServerSocket serverSocket = new ServerSocket(serverPort)){
+            while(true){
+                try(Socket clientSocket = serverSocket.accept()){
+                    String clientIP = clientSocket.getInetAddress().getHostAddress();
+                    int clientPort = clientSocket.getPort();
+
+                    logger.info("Новое подключение!");
+                    logger.info("IP клиента: " + clientIP);
+                    logger.info("Порт клиента: " + clientPort);
+
+                    BufferedReader in = new BufferedReader(
+                            new InputStreamReader(clientSocket.getInputStream())
+                    );
+
+                    PrintWriter out = new PrintWriter(
+                            clientSocket.getOutputStream(),true
+                    );
+
+                    out.println("Привет! Вы подключились в сетьевой чат! Как Вас зовут?");
+                    logger.info("Привет! Вы подключились в сетьевой чат! Как Вас зовут?");
+                    String name = in.readLine();
+                    logger.info(name);
+
+                    String response = String.format(
+                            "Привет, %s! Твой порт: %d , задай свой ворос.",
+                            name,
+                            clientPort
+                    );
+
+                    out.println(response);
+                    logger.info(response);
+                    String question = in.readLine();
+                    logger.info(question);
+
+                    int n = 3;
+                    while (true) {
+                        out.println("Сообщение от сервера № " + n);
+                        logger.info("Сообщение от сервера № " + n);
+                        n++;
+                        String nextMessage = in.readLine();
+                        logger.info(nextMessage);
+                        if(nextMessage.equalsIgnoreCase("/exit")){
+                            String lastResponse = String.format(
+                                    "До свидания, %s! Будем рады видеть тебя снова!",
+                                    name
+                            );
+                            out.println(lastResponse);
+                            logger.info(lastResponse);
+                        }
+                    }
+
+
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "Ошибка при работе с клиентом: ", e);
+                }
+            }
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Ошибка при работе с клиентом: ", e);
         }
     }
 }
