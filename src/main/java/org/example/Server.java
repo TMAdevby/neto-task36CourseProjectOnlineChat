@@ -1,6 +1,6 @@
 package org.example;
 
-import java.io.FileReader;
+import java.util.logging.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -10,12 +10,12 @@ public class Server {
     private static final String CONFIG_FILE = "settings.txt";
     private static final int DEFAULT_SERVER_PORT = 8089;
     private int serverPort = DEFAULT_SERVER_PORT;
+    private static final Logger logger = Logger.getLogger(Server.class.getName());
 
     public static void main(String[] args) {
         Server server = new Server();
         server.readServerPortFromFile(CONFIG_FILE);
     }
-
 
 
     public int getServerPort() {
@@ -30,11 +30,13 @@ public class Server {
         try {
             String content = Files.readString(Paths.get(fileName)).trim();
             setServerPort(Integer.parseInt(content));
-        } catch (IOException | NumberFormatException e) {
-            System.err.println("Ошибка чтения порта из settings.txt. Используется порт по умолчанию: 8089");
-            e.printStackTrace();
-            setServerPort(DEFAULT_SERVER_PORT);
+            logger.info("Порт успешно прочитан из settings.txt: " + serverPort);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Файл settings.txt не найден. Используется порт по умолчанию: " + DEFAULT_SERVER_PORT, e);
+            this.serverPort = DEFAULT_SERVER_PORT;
+        }catch (NumberFormatException e) {
+            logger.log(Level.SEVERE, "Некорректный формат порта в settings.txt. Используется порт по умолчанию: " + DEFAULT_SERVER_PORT, e);
+            this.serverPort = DEFAULT_SERVER_PORT;
         }
-        System.out.println("Server port: " + getServerPort());
     }
 }
