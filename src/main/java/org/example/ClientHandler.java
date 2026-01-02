@@ -2,6 +2,7 @@ package org.example;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,15 +17,22 @@ public class ClientHandler implements Runnable {
 
     //У каждого клиента свой сокет и потоки ввода-вывода, сервер один на всех
     public ClientHandler(Socket socket, Server server) {
-        this.socket = socket;
-        this.server = server;
-        try {
-            this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.out = new PrintWriter(socket.getOutputStream(), true);
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Ошибка создания потоков для клиента", e);
+            this.socket = socket;
+            this.server = server;
+            try {
+                // ЯВНО указываем UTF-8
+                this.in = new BufferedReader(
+                        new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
+                );
+                this.out = new PrintWriter(
+                        new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8),
+                        true
+                );
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "Ошибка создания потоков для клиента", e);
+            }
         }
-    }
+
 
     public void sendMessage(String message) {
         try {
