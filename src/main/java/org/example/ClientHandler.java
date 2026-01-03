@@ -82,4 +82,8 @@ public class ClientHandler implements Runnable {
             disconnect();
         }
     }
+
+    public static String formatMessage(String name, String text) {
+        return name + ": " + text;
+    }
 }
